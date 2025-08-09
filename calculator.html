@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dynamic HTML Design — Single File</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#4f46e5;--muted:#94a3b8;--glass: rgba(255,255,255,0.04)}
+    [data-theme="light"]{--bg:#f8fafc;--card:#ffffff;--accent:#2563eb;--muted:#6b7280;--glass: rgba(15,23,42,0.04)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,var(--bg),#071024);color:var(--muted);min-height:100vh;transition:background 300ms, color 300ms}
+    .container{max-width:1100px;margin:32px auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .logo{display:flex;align-items:center;gap:10px}
+    .logo .mark{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#06b6d4);display:grid;place-items:center;color:white;font-weight:700}
+    nav a{margin-left:18px;color:var(--muted);text-decoration:none}
+    .hero{display:grid;grid-template-columns:1fr 420px;gap:30px;align-items:center;margin-top:30px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:14px;padding:18px;backdrop-filter: blur(6px);box-shadow: 0 6px 18px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03)}
+    .title{font-size:28px;color:var(--card);color:var(--muted);}
+    h1{margin:0;color:var(--accent);font-size:34px}
+    p.lead{margin-top:12px;color:var(--muted);line-height:1.5}
+
+    /* Dynamic grid of items */
+    .controls{display:flex;gap:10px;margin-top:16px}
+    .btn{background:var(--glass);border:1px solid rgba(255,255,255,0.03);padding:10px 14px;border-radius:10px;color:var(--muted);cursor:pointer}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),#06b6d4);color:white;border:none}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:20px}
+    .item{padding:14px;border-radius:12px;background:var(--card);color:var(--muted);transition:transform 220ms, box-shadow 220ms}
+    .item:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(2,6,23,0.6)}
+    .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .tag{font-size:12px;padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.03)}
+
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:none;place-items:center}
+    .modal{width:min(720px,calc(100% - 40px));}
+
+    /* footer */
+    footer{margin-top:36px;text-align:center;color:var(--muted)}
+
+    /* utilities */
+    .flex{display:flex;align-items:center}
+    .spacer{flex:1}
+    .search{flex:1}
+    input[type="search"], input[type="text"]{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted)}
+
+    /* responsive */
+    @media (max-width:900px){.hero{grid-template-columns:1fr}.logo .text{display:none}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="mark">DD</div>
+        <div class="text">
+          <div style="font-weight:700;color:var(--accent)">DynamicDesign</div>
+          <div style="font-size:12px;color:var(--muted)">Interactive single-file template</div>
+        </div>
+      </div>
+
+      <div class="flex">
+        <div class="search" style="max-width:320px;margin-right:12px">
+          <input id="search" type="search" placeholder="Search items, e.g. UI, card" />
+        </div>
+        <button id="themeToggle" class="btn" title="Toggle theme">Toggle Theme</button>
+      </div>
+    </header>
+
+    <main class="hero">
+      <section class="card">
+        <h1>Build a dynamic design — live.</h1>
+        <p class="lead">This single-file template demonstrates a modern, responsive layout with dynamic filtering, a theme toggle, modal details, live clock, and animated counters. Copy-paste into a file named <code>dynamic_design.html</code> and open in a browser.</p>
+
+        <div class="controls">
+          <div style="display:flex;gap:10px">
+            <button class="btn" id="filter-all">All</button>
+            <button class="btn" data-filter="ui">UI</button>
+            <button class="btn" data-filter="code">Code</button>
+            <button class="btn" data-filter="design">Design</button>
+          </div>
+          <div class="spacer"></div>
+          <div class="flex" style="gap:10px">
+            <div style="text-align:right">
+              <div style="font-size:12px;color:var(--muted)">Live time</div>
+              <div id="clock" style="font-weight:700;color:var(--accent)"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" id="grid">
+          <!-- items injected by JS -->
+        </div>
+      </section>
+
+      <aside class="card">
+        <h3 style="margin:0 0 12px 0;color:var(--muted)">Quick actions</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn primary" id="openModal">Create new item</button>
+          <button class="btn" id="shuffle">Shuffle Items</button>
+          <div style="padding:10px;border-radius:10px;background:var(--glass);text-align:center">
+            <div style="font-weight:700;font-size:20px" id="count">0</div>
+            <div style="font-size:12px;color:var(--muted)">Items displayed</div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <small>Made with ♥ — modify freely. Want animations, more components, or export to React? Ask me.</small>
+    </footer>
+  </div>
+
+  <!-- modal -->
+  <div id="backdrop" class="modal-backdrop">
+    <div class="modal card" role="dialog" aria-modal="true">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <strong>Create item</strong>
+        <button class="btn" id="closeModal">Close</button>
+      </div>
+      <div style="margin-top:12px;display:grid;gap:10px">
+        <input id="itemTitle" type="text" placeholder="Title e.g. Clean UI Card" />
+        <input id="itemTags" type="text" placeholder="Tags (comma separated) e.g. ui,design" />
+        <div style="display:flex;gap:10px">
+          <button class="btn primary" id="saveItem">Save</button>
+          <button class="btn" id="cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sample data
+    const items = [
+      {id:1,title:'Landing Hero',tags:['ui','design'],desc:'Big hero with call-to-action.'},
+      {id:2,title:'Pricing Cards',tags:['ui','code'],desc:'Responsive pricing cards with toggles.'},
+      {id:3,title:'Animated List',tags:['code'],desc:'Staggered reveal using IntersectionObserver.'},
+      {id:4,title:'Profile Panel',tags:['ui','design'],desc:'Compact user profile with actions.'},
+      {id:5,title:'Analytics Widget',tags:['code','design'],desc:'Animated counters and sparklines.'},
+      {id:6,title:'Newsletter Form',tags:['ui','code'],desc:'Validated email capture form.'}
+    ];
+
+    const grid = document.getElementById('grid');
+    const countEl = document.getElementById('count');
+
+    function render(list){
+      grid.innerHTML = '';
+      list.forEach(item=>{
+        const el = document.createElement('div');
+        el.className = 'item card';
+        el.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <strong style="color:var(--accent)">${item.title}</strong>
+              <div style="font-size:13px;color:var(--muted);margin-top:6px">${item.desc}</div>
+            </div>
+            <div style="font-size:12px;color:var(--muted)">#${item.id}</div>
+          </div>
+          <div class="tags">${item.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        `;
+        el.addEventListener('click',()=>openDetail(item));
+        grid.appendChild(el);
+      });
+      countEl.textContent = list.length;
+    }
+
+    function openDetail(item){
+      // Simple detail modal (re-using existing modal) — populate and open
+      document.getElementById('itemTitle').value = item.title;
+      document.getElementById('itemTags').value = item.tags.join(',');
+      backdropToggle(true);
+    }
+
+    // Filters
+    document.querySelectorAll('[data-filter]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const f = btn.getAttribute('data-filter');
+        applyFilter(f);
+      });
+    });
+    document.getElementById('filter-all').addEventListener('click',()=>render(items));
+
+    document.getElementById('search').addEventListener('input',(e)=>{
+      const q = e.target.value.trim().toLowerCase();
+      if(!q) return render(items);
+      render(items.filter(it=>it.title.toLowerCase().includes(q) || it.tags.join(' ').includes(q) || it.desc.toLowerCase().includes(q)));
+    });
+
+    function applyFilter(tag){
+      render(items.filter(it=>it.tags.includes(tag)));
+    }
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click',()=>{
+      const cur = document.documentElement.getAttribute('data-theme');
+      if(cur==='light'){ document.documentElement.removeAttribute('data-theme'); localStorage.removeItem('dd-theme'); }
+      else { document.documentElement.setAttribute('data-theme','light'); localStorage.setItem('dd-theme','light'); }
+    });
+    // load saved theme
+    if(localStorage.getItem('dd-theme')==='light') document.documentElement.setAttribute('data-theme','light');
+
+    // Modal logic
+    const backdrop = document.getElementById('backdrop');
+    function backdropToggle(show){ backdrop.style.display = show ? 'grid' : 'none'; }
+    document.getElementById('openModal').addEventListener('click',()=>backdropToggle(true));
+    document.getElementById('closeModal').addEventListener('click',()=>backdropToggle(false));
+    document.getElementById('cancel').addEventListener('click',()=>backdropToggle(false));
+
+    document.getElementById('saveItem').addEventListener('click',()=>{
+      const title = document.getElementById('itemTitle').value.trim();
+      const tags = document.getElementById('itemTags').value.split(',').map(s=>s.trim()).filter(Boolean);
+      if(!title) return alert('Title required');
+      const id = items.length ? Math.max(...items.map(i=>i.id))+1 : 1;
+      const it = {id,title,tags,desc:'User created item.'};
+      items.push(it);
+      render(items);
+      backdropToggle(false);
+    });
+
+    document.getElementById('shuffle').addEventListener('click',()=>{
+      for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]]}
+      render(items);
+    });
+
+    // Live clock
+    function tick(){
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      const ss = String(now.getSeconds()).padStart(2,'0');
+      document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
+    }
+    setInterval(tick,1000); tick();
+
+    // Animated counter (simple)
+    function animateCount(targetEl, value){
+      let start = 0; const dur = 600; const step = 16; const inc = value/(dur/step);
+      const t = setInterval(()=>{ start += inc; if(start >= value){ targetEl.textContent = value; clearInterval(t)} else targetEl.textContent = Math.floor(start) }, step);
+    }
+
+    // Initial render
+    render(items);
+    animateCount(countEl, items.length);
+
+    // Small accessibility addition: keyboard to close modal
+    document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') backdropToggle(false) });
+
+    // Expose a little helper for dev console
+    window.dd = {items,render};
+  </script>
+</body>
+</html>
